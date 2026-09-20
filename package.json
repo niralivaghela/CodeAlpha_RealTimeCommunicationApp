@@ -1,0 +1,95 @@
+{
+  "name": "nexora-connect",
+  "version": "1.0.0",
+  "description": "Nexora Connect - Real-Time Desktop Communication & Collaboration Platform",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "node server/server.js",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "build:icons": "node scripts/create-nexora-icon.js",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"npm run server\" \"npm run client\" \"electron .\"",
+    "electron:build": "npm run build && electron-builder --win nsis portable",
+    "test:multi": "node test_e2e_verification.js",
+    "test:upgrade": "node test_new_features_verification.js",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install"
+  },
+  "build": {
+    "appId": "com.nexora.connect",
+    "productName": "Nexora Connect",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "build/**/*",
+      "client/dist/**/*",
+      "server/**/*",
+      "package.json"
+    ],
+    "protocols": [
+      {
+        "name": "Nexora Connect Protocol",
+        "schemes": [
+          "nexora"
+        ]
+      }
+    ],
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Nexora Connect",
+      "artifactName": "NexoraConnect-Setup-${version}.${ext}",
+      "uninstallDisplayName": "Nexora Connect",
+      "runAfterFinish": false
+    },
+    "portable": {
+      "artifactName": "NexoraConnect-Portable-${version}.${ext}"
+    }
+  },
+  "keywords": [
+    "nexora",
+    "electron",
+    "webrtc",
+    "socket.io",
+    "video-conferencing",
+    "whiteboard",
+    "collaboration",
+    "mongodb",
+    "react",
+    "vite"
+  ],
+  "author": "Nexora Connect Engineering",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^44.4.3",
+    "electron-builder": "^26.7.0",
+    "png-to-ico": "^2.1.8",
+    "socket.io-client": "^4.8.3"
+  }
+}
