@@ -11,10 +11,12 @@ const {
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
+const { fork } = require('child_process');
 
 let mainWindow = null;
 let splashWindow = null;
 let tray = null;
+let backendProcess = null;
 const SERVER_PORT = process.env.PORT || 5000;
 const VITE_PORT = 5173;
 
@@ -97,6 +99,33 @@ function isPortActive(port) {
       resolve(false);
     });
   });
+}
+
+async function ensureBackendRunning() {
+  const isUp = await isPortActive(SERVER_PORT);
+  if (isUp) return;
+
+  const serverScript = path.join(__dirname, 'server', 'server.js');
+  if (fs.existsSync(serverScript)) {
+    try {
+      console.log('Spawning backend server automatically...');
+      backendProcess = fork(serverScript, [], {
+        env: { ...process.env, PORT: SERVER_PORT },
+        stdio: 'ignore',
+        detached: false,
+      });
+
+      for (let i = 0; i < 25; i++) {
+        await new Promise((r) => setTimeout(r, 400));
+        if (await isPortActive(SERVER_PORT)) {
+          console.log('Backend server is ready on port', SERVER_PORT);
+          break;
+        }
+      }
+    } catch (err) {
+      console.warn('Could not auto-spawn backend:', err.message);
+    }
+  }
 }
 
 function createSplashWindow() {
@@ -415,12 +444,21 @@ function createSystemTray() {
 // Application Lifecycle
 app.whenReady().then(async () => {
   createSplashWindow();
+  await ensureBackendRunning();
   await createMainWindow();
   createSystemTray();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow();
   });
+});
+
+app.on('will-quit', () => {
+  if (backendProcess) {
+    try {
+      backendProcess.kill();
+    } catch (e) {}
+  }
 });
 
 app.on('window-all-closed', () => {
